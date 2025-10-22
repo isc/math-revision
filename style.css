@@ -121,3 +121,18 @@
   font-size: 150px;
   z-index: 1000;
 }
+
+/* Scoreboard styles */
+#scoreboard {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--pico-muted-border-color);
+}
+
+#scoreboard h3 {
+  text-align: center;
+}
+
+.current-score {
+  background-color: var(--pico-primary-background);
+}

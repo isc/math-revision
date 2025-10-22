@@ -41,6 +41,23 @@
           </header>
           <p>Vous avez atteint l'objectif de 10 bonnes réponses !</p>
           <p>⏱️ Temps réalisé : <strong id="final-time"></strong></p>
+
+          <div id="scoreboard">
+            <h3>🏆 Top 10 des meilleurs temps</h3>
+            <table id="scoreboard-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Temps</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="scoreboard-body">
+                <!-- Les scores seront ajoutés dynamiquement -->
+              </tbody>
+            </table>
+          </div>
+
           <footer>
             <button onclick="closeModal()">Continuer</button>
           </footer>
