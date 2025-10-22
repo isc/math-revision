@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.orange.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <div class="progress-section">
+        <div class="progress-header">
+          <label for="progress-bar" class="progress-label"
+            >Progression : <span id="score">0</span> / 10</label
+          >
+          <div class="timer-section">
+            <label class="timer-label"
+              >⏱️ <span id="timer-display">0:00</span></label
+            >
+          </div>
+        </div>
+        <progress id="progress-bar" value="0" max="10"></progress>
+      </div>
+      <h1 class="question-title"></h1>
+      <form onsubmit="checkAnswer(); return false">
+        <fieldset role="group">
+          <input autofocus type="number" />
+          <button>Vérifier</button>
+        </fieldset>
+      </form>
+      <div id="thumbs-up" class="emoji-big">👍</div>
+      <div id="angry-face" class="emoji-big">😡</div>
+      <dialog id="congratulations-modal">
+        <article>
+          <header>
+            <h2>🎉 Félicitations !</h2>
+          </header>
+          <p>Vous avez atteint l'objectif de 10 bonnes réponses !</p>
+          <p>⏱️ Temps réalisé : <strong id="final-time"></strong></p>
+          <footer>
+            <button onclick="closeModal()">Continuer</button>
+          </footer>
+        </article>
+      </dialog>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
