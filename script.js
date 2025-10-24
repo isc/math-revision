@@ -20,10 +20,7 @@ document.addEventListener('alpine:init', () => {
     difficultyManager: null,
     difficultyStats: {
       levelName: 'Débutant',
-      levelIcon: '🌱',
-      questionsAtLevel: 0,
-      successRate: 0,
-      averageTime: 0
+      levelIcon: '🌱'
     },
 
     // Scoreboard
@@ -199,10 +196,7 @@ document.addEventListener('alpine:init', () => {
       const stats = this.difficultyManager.getStats()
       this.difficultyStats = {
         levelName: stats.levelName,
-        levelIcon: stats.levelIcon,
-        questionsAtLevel: stats.questionsAtLevel,
-        successRate: stats.successRate,
-        averageTime: stats.averageTime
+        levelIcon: stats.levelIcon
       }
     },
 

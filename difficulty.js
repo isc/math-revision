@@ -8,42 +8,47 @@ const DIFFICULTY_LEVELS = {
   1: {
     name: 'Débutant',
     additionWeight: 80,
-    multiplicationWeight: 20,
     multiplicationTables: [2, 5, 10], // Tables faciles
     icon: '🌱',
-    maxTime: 8
+    maxTime: 8,
+    minValue: 0, // Permet +0, ×0, +1, ×1
+    maxValue: 10
   },
   2: {
     name: 'Apprenti',
     additionWeight: 60,
-    multiplicationWeight: 40,
     multiplicationTables: [2, 5, 10],
     icon: '🌿',
-    maxTime: 7
+    maxTime: 7,
+    minValue: 0, // Permet +0, ×0, +1, ×1
+    maxValue: 10
   },
   3: {
     name: 'Intermédiaire',
     additionWeight: 40,
-    multiplicationWeight: 60,
     multiplicationTables: [2, 3, 4, 5, 6, 10],
     icon: '🌳',
-    maxTime: 6
+    maxTime: 6,
+    minValue: 0, // Permet +0, ×0, +1, ×1
+    maxValue: 10
   },
   4: {
     name: 'Avancé',
     additionWeight: 30,
-    multiplicationWeight: 70,
     multiplicationTables: [2, 3, 4, 5, 6, 10], // Toutes sauf 7, 8, 9
     icon: '⭐',
-    maxTime: 5
+    maxTime: 5,
+    minValue: 1, // Exclut +0 et ×0, mais permet +1 et ×1
+    maxValue: 10
   },
   5: {
     name: 'Expert',
-    additionWeight: 20,
-    multiplicationWeight: 80,
+    additionWeight: 15,
     multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], // Toutes
     icon: '🏆',
-    maxTime: 5
+    maxTime: 5,
+    minValue: 2, // Exclut +0, ×0, +1, ×1
+    maxValue: 10
   }
 }
 
@@ -91,6 +96,7 @@ class DifficultyManager {
   generateQuestion() {
     const level = this.getCurrentLevel()
     const random = Math.random() * 100
+    const range = level.maxValue - level.minValue + 1
 
     let operand, valueA, valueB
 
@@ -98,15 +104,15 @@ class DifficultyManager {
     if (random < level.additionWeight) {
       // Addition
       operand = '+'
-      valueA = Math.floor(Math.random() * 11) // 0-10
-      valueB = Math.floor(Math.random() * 11) // 0-10
+      valueA = Math.floor(Math.random() * range) + level.minValue
+      valueB = Math.floor(Math.random() * range) + level.minValue
     } else {
       // Multiplication
       operand = '×'
       // Choisir une table parmi celles autorisées au niveau actuel
       const tables = level.multiplicationTables
       valueA = tables[Math.floor(Math.random() * tables.length)]
-      valueB = Math.floor(Math.random() * 11) // 0-10
+      valueB = Math.floor(Math.random() * range) + level.minValue
 
       // Parfois inverser pour varier
       if (Math.random() > 0.5) {

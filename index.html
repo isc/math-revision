@@ -16,18 +16,9 @@
   </head>
   <body>
     <main class="container" x-data="gameState()">
-      <article>
-        <header>
-          <hgroup>
-            <h4
-              x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
-            ></h4>
-            <p
-              x-text="`Questions: ${difficultyStats.questionsAtLevel} | Réussite: ${difficultyStats.successRate}% | Temps moyen: ${difficultyStats.averageTime}s`"
-            ></p>
-          </hgroup>
-        </header>
-      </article>
+      <h4
+        x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+      ></h4>
 
       <!-- Écran de démarrage -->
       <div x-show="!gameStarted" style="text-align: center">
@@ -37,24 +28,15 @@
 
       <!-- Écran de jeu -->
       <div x-show="gameStarted" x-cloak>
-        <div class="progress-section">
-          <div class="progress-header">
-            <label for="progress-bar" class="progress-label">
-              Progression : <span x-text="correctAnswers"></span> / 10
-            </label>
-            <div class="timer-section">
-              <label class="timer-label">
-                ⏱️ <span x-text="timerDisplay"></span>
-              </label>
-            </div>
+        <div class="progress-header">
+          <label>
+            Progression : <span x-text="correctAnswers"></span> / 10
+          </label>
+          <div class="timer-section">
+            <label> ⏱️ <span x-text="timerDisplay"></span> </label>
           </div>
-          <progress
-            id="progress-bar"
-            :value="correctAnswers"
-            max="10"
-            value="0"
-          ></progress>
         </div>
+        <progress :value="correctAnswers" max="10" value="0"></progress>
 
         <h1 class="question-title" x-text="questionText"></h1>
 

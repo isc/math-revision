@@ -84,33 +84,9 @@
   }
 }
 
-.progress-section {
-  margin-bottom: 2rem;
-}
-
 .progress-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.progress-label {
-  margin: 0;
-}
-
-.timer-section {
-  text-align: right;
-}
-
-.timer-label {
-  margin: 0;
-}
-
-#timer-display {
-  font-size: 1.5rem;
-  font-weight: bold;
 }
 
 .question-title {
