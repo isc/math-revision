@@ -1,3 +1,8 @@
+/* Alpine.js - éviter le flash de contenu */
+[x-cloak] {
+  display: none !important;
+}
+
 @keyframes thumbsAnimation {
   0% {
     transform: translate(-50%, -50%) scale(0) rotate(-45deg);

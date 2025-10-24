@@ -1,263 +1,347 @@
-let valueA
-let valueB
-let operand
-let correctAnswers = 0
-let startTime = null
-let timerInterval = null
-let questionStartTime = null // Timer pour chaque question individuelle
-let difficultyManager = null // Gestionnaire de difficulté
-let gameStarted = false // Indicateur si le jeu a démarré
+// Configuration Alpine.js
+document.addEventListener('alpine:init', () => {
+  Alpine.data('gameState', () => ({
+    // État du jeu
+    valueA: 0,
+    valueB: 0,
+    operand: '+',
+    correctAnswers: 0,
+    userAnswer: '',
+    gameStarted: false,
+    questionText: '',
 
-// Gestion du scoreboard
-const SCOREBOARD_KEY = 'math-revision-scoreboard'
-const MAX_SCORES = 10
+    // Timer
+    startTime: null,
+    timerInterval: null,
+    timerDisplay: '0:00',
+    questionStartTime: null,
 
-function getScoreboard() {
-  const stored = localStorage.getItem(SCOREBOARD_KEY)
-  return stored ? JSON.parse(stored) : []
-}
+    // Difficulté
+    difficultyManager: null,
+    difficultyStats: {
+      levelName: 'Débutant',
+      levelIcon: '🌱',
+      questionsAtLevel: 0,
+      successRate: 0,
+      averageTime: 0
+    },
 
-function saveScore(timeInSeconds) {
-  const scoreboard = getScoreboard()
+    // Scoreboard
+    scoreboard: [],
+    finalTimeText: '',
 
-  // Ajouter le nouveau score avec timestamp
-  scoreboard.push({
-    time: timeInSeconds,
-    date: new Date().toISOString()
-  })
+    // Initialisation
+    init() {
+      this.difficultyManager = new DifficultyManager()
+      this.updateDifficultyDisplay()
 
-  // Trier par temps (du plus rapide au plus lent)
-  scoreboard.sort((a, b) => a.time - b.time)
+      // Observer pour auto-focus
+      this.$watch('gameStarted', value => {
+        if (value) {
+          this.$nextTick(() => {
+            this.$refs.answerInput?.focus()
+          })
+        }
+      })
+    },
 
-  // Garder seulement les 10 meilleurs
-  const topScores = scoreboard.slice(0, MAX_SCORES)
+    // Démarrer le jeu
+    startGame() {
+      this.gameStarted = true
+      this.correctAnswers = 0
+      this.startTime = Date.now()
+      this.startTimer()
+      this.newQuestion()
+    },
 
-  // Sauvegarder dans localStorage
-  localStorage.setItem(SCOREBOARD_KEY, JSON.stringify(topScores))
+    // Générer une nouvelle question
+    newQuestion() {
+      if (!this.gameStarted) return
 
-  return topScores
-}
+      if (this.difficultyManager) {
+        const question = this.difficultyManager.generateQuestion()
+        this.valueA = question.valueA
+        this.valueB = question.valueB
+        this.operand = question.operand
+      } else {
+        this.valueA = this.randomInteger()
+        this.valueB = this.randomInteger()
+        this.operand = ['+', '×'][this.randomInteger() % 2]
+      }
 
-function formatTime(seconds) {
-  const minutes = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  if (minutes > 0) {
-    return `${minutes} min ${secs} sec`
-  }
-  return `${seconds} sec`
-}
+      this.questionText = `${this.valueA} ${this.operand} ${this.valueB} = ?`
+      this.userAnswer = ''
+      this.questionStartTime = Date.now()
 
-function formatDate(isoString) {
-  const date = new Date(isoString)
-  const now = new Date()
-  const diffTime = Math.abs(now - date)
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+      this.$nextTick(() => {
+        this.$refs.answerInput?.focus()
+      })
+    },
 
-  if (diffDays === 0) {
-    return "Aujourd'hui"
-  } else if (diffDays === 1) {
-    return 'Hier'
-  } else if (diffDays < 7) {
-    return `Il y a ${diffDays} jours`
-  } else {
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-  }
-}
+    // Vérifier la réponse
+    checkAnswer() {
+      const correctValue =
+        this.operand === '+'
+          ? this.valueA + this.valueB
+          : this.valueA * this.valueB
+      const isCorrect = correctValue == this.userAnswer
 
-function displayScoreboard(currentTime) {
-  const scoreboard = getScoreboard()
-  const scoreboardBody = document.getElementById('scoreboard-body')
-  scoreboardBody.innerHTML = ''
+      // Calculer le temps de réponse
+      const questionEndTime = Date.now()
+      const questionTime = this.questionStartTime
+        ? (questionEndTime - this.questionStartTime) / 1000
+        : 0
 
-  if (scoreboard.length === 0) {
-    scoreboardBody.innerHTML =
-      '<tr><td colspan="3">Aucun score enregistré</td></tr>'
-    return
-  }
+      // Enregistrer dans le gestionnaire de difficulté
+      if (this.difficultyManager) {
+        this.difficultyManager.recordAnswer(
+          isCorrect,
+          questionTime,
+          this.operand
+        )
+        this.updateDifficultyDisplay()
+      }
 
-  scoreboard.forEach((score, index) => {
-    const tr = document.createElement('tr')
-    const isCurrentScore =
-      score.time === currentTime &&
-      index === scoreboard.findIndex(s => s.time === currentTime)
+      if (isCorrect) {
+        this.handleCorrectAnswer()
+      } else {
+        this.handleWrongAnswer()
+      }
+    },
 
-    if (isCurrentScore) {
-      tr.classList.add('current-score')
-    }
+    // Gérer une bonne réponse
+    handleCorrectAnswer() {
+      this.correctAnswers++
 
-    const rank = index === 0 ? '👑' : index + 1
-    const badge = isCurrentScore ? ' 🆕' : ''
+      // Animation du pouce vers le haut
+      this.showThumbsUp()
 
-    tr.innerHTML = `
-      <td>${rank}</td>
-      <td><strong>${formatTime(score.time)}</strong>${badge}</td>
-      <td>${formatDate(score.date)}</td>
-    `
+      // Confettis
+      this.showConfetti()
 
-    scoreboardBody.appendChild(tr)
-  })
-}
+      // Vérifier si objectif atteint
+      if (this.correctAnswers >= 10) {
+        setTimeout(() => {
+          this.showVictory()
+        }, 1500)
+      } else {
+        setTimeout(() => {
+          this.newQuestion()
+        }, 1000)
+      }
+    },
 
-function randomInteger() {
-  return Math.round(Math.random() * 10)
-}
+    // Gérer une mauvaise réponse
+    handleWrongAnswer() {
+      this.showAngryFace()
+      this.showThumbsDownRain()
+    },
 
-// Démarrer le jeu
-function startGame() {
-  // Masquer l'écran de démarrage
-  document.getElementById('start-screen').style.display = 'none'
+    // Afficher la victoire
+    showVictory() {
+      clearInterval(this.timerInterval)
 
-  // Afficher l'écran de jeu
-  document.getElementById('game-screen').style.display = 'block'
+      const endTime = Date.now()
+      const elapsedTime = Math.floor((endTime - this.startTime) / 1000)
+      const minutes = Math.floor(elapsedTime / 60)
+      const seconds = elapsedTime % 60
+      this.finalTimeText =
+        minutes > 0 ? `${minutes} min ${seconds} sec` : `${seconds} secondes`
 
-  // Démarrer le timer de la partie
-  startTime = Date.now()
-  timerInterval = setInterval(updateTimerDisplay, 100)
+      // Sauvegarder et afficher le scoreboard
+      this.saveScore(elapsedTime)
+      this.loadScoreboard(elapsedTime)
 
-  // Générer et afficher la première question
-  gameStarted = true
-  newQuestion()
+      // Afficher la modale
+      this.$refs.congratsModal.showModal()
 
-  // Mettre le focus sur le champ de réponse
-  document.getElementById('answer-input').focus()
-}
+      // Pluie de pouces vers le haut
+      this.showThumbsUpRain()
+    },
 
-// Mettre à jour l'affichage du niveau de difficulté
-function updateDifficultyDisplay() {
-  const stats = difficultyManager.getStats()
-  const levelDisplay = document.getElementById('difficulty-level')
+    // Fermer la modale
+    closeModal() {
+      this.$refs.congratsModal.close()
 
-  if (levelDisplay) {
-    levelDisplay.textContent = `${stats.levelIcon} ${stats.levelName}`
-  }
+      // Réinitialiser
+      this.gameStarted = false
+      this.correctAnswers = 0
+      this.startTime = null
+      this.timerInterval = null
+      this.questionStartTime = null
+      this.timerDisplay = '0:00'
+      this.userAnswer = ''
+    },
 
-  // Mettre à jour les statistiques si l'élément existe
-  const statsDisplay = document.getElementById('difficulty-stats')
-  if (statsDisplay) {
-    statsDisplay.textContent = `Questions: ${stats.questionsAtLevel} | Réussite: ${stats.successRate}% | Temps moyen: ${stats.averageTime}s`
-  }
-}
+    // Timer
+    startTimer() {
+      this.timerInterval = setInterval(() => {
+        this.updateTimerDisplay()
+      }, 100)
+    },
 
-function updateTimerDisplay() {
-  if (startTime === null) {
-    document.getElementById('timer-display').textContent = '0:00'
-    return
-  }
+    updateTimerDisplay() {
+      if (this.startTime === null) {
+        this.timerDisplay = '0:00'
+        return
+      }
 
-  const elapsed = Math.floor((Date.now() - startTime) / 1000)
-  const minutes = Math.floor(elapsed / 60)
-  const seconds = elapsed % 60
-  document.getElementById('timer-display').textContent =
-    `${minutes}:${seconds.toString().padStart(2, '0')}`
-}
+      const elapsed = Math.floor((Date.now() - this.startTime) / 1000)
+      const minutes = Math.floor(elapsed / 60)
+      const seconds = elapsed % 60
+      this.timerDisplay = `${minutes}:${seconds.toString().padStart(2, '0')}`
+    },
 
-function checkAnswer() {
-  const value = document.querySelector('input').value
-  const correctValue = operand == '+' ? valueA + valueB : valueA * valueB
-  const isCorrect = correctValue == value
+    // Mise à jour de l'affichage de difficulté
+    updateDifficultyDisplay() {
+      if (!this.difficultyManager) return
 
-  // Calculer le temps de réponse pour cette question
-  const questionEndTime = Date.now()
-  const questionTime = questionStartTime
-    ? (questionEndTime - questionStartTime) / 1000
-    : 0
+      const stats = this.difficultyManager.getStats()
+      this.difficultyStats = {
+        levelName: stats.levelName,
+        levelIcon: stats.levelIcon,
+        questionsAtLevel: stats.questionsAtLevel,
+        successRate: stats.successRate,
+        averageTime: stats.averageTime
+      }
+    },
 
-  // Enregistrer la réponse dans le gestionnaire de difficulté
-  if (difficultyManager) {
-    difficultyManager.recordAnswer(isCorrect, questionTime, operand)
-    updateDifficultyDisplay()
-  }
+    // Gestion du scoreboard
+    saveScore(timeInSeconds) {
+      const scoreboard = this.getScoreboard()
 
-  if (isCorrect) {
-    // Incrémenter le score d'abord
-    correctAnswers++
-    document.getElementById('score').textContent = correctAnswers
-    document.getElementById('progress-bar').value = correctAnswers
+      scoreboard.push({
+        time: timeInSeconds,
+        date: new Date().toISOString()
+      })
 
-    // Afficher le pouce vers le haut
-    const thumbsUp = document.getElementById('thumbs-up')
-    thumbsUp.style.visibility = 'visible'
-    thumbsUp.style.animation = 'thumbsAnimation 2s ease-out'
+      scoreboard.sort((a, b) => a.time - b.time)
+      const topScores = scoreboard.slice(0, 10)
 
-    // Cacher le pouce après l'animation
-    setTimeout(() => {
-      thumbsUp.style.visibility = 'hidden'
-      thumbsUp.style.animation = 'none'
-    }, 2000)
+      localStorage.setItem(
+        'math-revision-scoreboard',
+        JSON.stringify(topScores)
+      )
+    },
 
-    // Animation de confettis depuis le coin bas gauche
-    confetti({
-      particleCount: 100,
-      angle: 45,
-      spread: 70,
-      origin: { x: 0, y: 1 },
-      ticks: 300,
-      gravity: 0.5,
-      scalar: 1.2
-    })
+    getScoreboard() {
+      const stored = localStorage.getItem('math-revision-scoreboard')
+      return stored ? JSON.parse(stored) : []
+    },
 
-    // Confettis depuis le coin bas droit
-    setTimeout(() => {
+    loadScoreboard(currentTime) {
+      const scores = this.getScoreboard()
+      this.scoreboard = scores.map((score, index) => ({
+        ...score,
+        isCurrent:
+          score.time === currentTime &&
+          index === scores.findIndex(s => s.time === currentTime)
+      }))
+    },
+
+    // Utilitaires de formatage
+    formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60)
+      const secs = seconds % 60
+      return minutes > 0 ? `${minutes} min ${secs} sec` : `${seconds} sec`
+    },
+
+    formatDate(isoString) {
+      const date = new Date(isoString)
+      const now = new Date()
+      const diffTime = Math.abs(now - date)
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 0) return "Aujourd'hui"
+      if (diffDays === 1) return 'Hier'
+      if (diffDays < 7) return `Il y a ${diffDays} jours`
+
+      return date.toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'short'
+      })
+    },
+
+    randomInteger() {
+      return Math.round(Math.random() * 10)
+    },
+
+    // Animations
+    showThumbsUp() {
+      const thumbsUp = document.getElementById('thumbs-up')
+      thumbsUp.style.visibility = 'visible'
+      thumbsUp.style.animation = 'thumbsAnimation 2s ease-out'
+
+      setTimeout(() => {
+        thumbsUp.style.visibility = 'hidden'
+        thumbsUp.style.animation = 'none'
+      }, 2000)
+    },
+
+    showAngryFace() {
+      const angryFace = document.getElementById('angry-face')
+      angryFace.style.visibility = 'visible'
+      angryFace.style.animation = 'angryAnimation 2s ease-out'
+
+      setTimeout(() => {
+        angryFace.style.visibility = 'hidden'
+        angryFace.style.animation = 'none'
+      }, 2000)
+    },
+
+    showConfetti() {
+      // Confettis depuis le coin bas gauche
       confetti({
         particleCount: 100,
-        angle: 135,
+        angle: 45,
         spread: 70,
-        origin: { x: 1, y: 1 },
-        ticks: 300,
-        gravity: 0.5,
-        scalar: 1.2
-      })
-    }, 100)
-
-    // Confettis supplémentaires depuis le coin bas gauche
-    setTimeout(() => {
-      confetti({
-        particleCount: 80,
-        angle: 60,
-        spread: 55,
         origin: { x: 0, y: 1 },
         ticks: 300,
         gravity: 0.5,
         scalar: 1.2
       })
-    }, 200)
 
-    // Confettis supplémentaires depuis le coin bas droit
-    setTimeout(() => {
-      confetti({
-        particleCount: 80,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 1 },
-        ticks: 300,
-        gravity: 0.5,
-        scalar: 1.2
-      })
-    }, 200)
-
-    // Vérifier si l'objectif est atteint
-    if (correctAnswers >= 10) {
-      console.log('🎉 Objectif atteint ! Déclenchement des animations...')
-      const endTime = Date.now()
-      const elapsedTime = Math.floor((endTime - startTime) / 1000)
-      const minutes = Math.floor(elapsedTime / 60)
-      const seconds = elapsedTime % 60
-      const timeString =
-        minutes > 0 ? `${minutes} min ${seconds} sec` : `${seconds} secondes`
-
-      // Sauvegarder le score
-      saveScore(elapsedTime)
-
+      // Confettis depuis le coin bas droit
       setTimeout(() => {
-        clearInterval(timerInterval)
-        document.getElementById('final-time').textContent = timeString
-        // Afficher le scoreboard avec le temps actuel mis en évidence
-        displayScoreboard(elapsedTime)
-        document.getElementById('congratulations-modal').showModal()
-      }, 1500)
+        confetti({
+          particleCount: 100,
+          angle: 135,
+          spread: 70,
+          origin: { x: 1, y: 1 },
+          ticks: 300,
+          gravity: 0.5,
+          scalar: 1.2
+        })
+      }, 100)
 
-      // Pluie de pouces vers le haut
-      console.log('👍 Démarrage de la pluie de pouces vers le haut')
+      // Confettis supplémentaires depuis le coin bas gauche
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 1 },
+          ticks: 300,
+          gravity: 0.5,
+          scalar: 1.2
+        })
+      }, 200)
+
+      // Confettis supplémentaires depuis le coin bas droit
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 1 },
+          ticks: 300,
+          gravity: 0.5,
+          scalar: 1.2
+        })
+      }, 200)
+    },
+
+    showThumbsUpRain() {
       const duration = 3000
       const animationEnd = Date.now() + duration
 
@@ -269,7 +353,6 @@ function checkAnswer() {
           return
         }
 
-        // Créer un emoji 👍 qui monte
         const thumb = document.createElement('div')
         thumb.className = 'thumbs-up-rain'
         thumb.textContent = '👍'
@@ -277,117 +360,40 @@ function checkAnswer() {
         thumb.style.bottom = '0'
         thumb.style.animationDuration = Math.random() * 1.5 + 1.5 + 's'
 
-        // Ajouter dans la modale pour passer par-dessus
-        const modal = document.getElementById('congratulations-modal')
+        const modal = this.$refs.congratsModal
         modal.appendChild(thumb)
-        console.log('👍 Pouce ajouté à la position', thumb.style.left)
 
-        // Supprimer l'élément après l'animation
         setTimeout(() => {
           thumb.remove()
         }, 3500)
       }, 150)
+    },
 
-      // Ne pas appeler newQuestion tout de suite, on attend la modale
-    } else {
-      // Pas encore 10, on continue avec une nouvelle question
-      setTimeout(newQuestion, 1000)
+    showThumbsDownRain() {
+      const duration = 2000
+      const animationEnd = Date.now() + duration
+
+      const thumbsDownRain = setInterval(() => {
+        const timeLeft = animationEnd - Date.now()
+
+        if (timeLeft <= 0) {
+          clearInterval(thumbsDownRain)
+          return
+        }
+
+        const thumb = document.createElement('div')
+        thumb.className = 'thumbs-down-rain'
+        thumb.textContent = '👎'
+        thumb.style.left = Math.random() * 100 + '%'
+        thumb.style.top = '-100px'
+        thumb.style.animationDuration = Math.random() * 1.5 + 1.5 + 's'
+
+        document.body.appendChild(thumb)
+
+        setTimeout(() => {
+          thumb.remove()
+        }, 3500)
+      }, 150)
     }
-  } else {
-    // Afficher l'emoji en colère
-    const angryFace = document.getElementById('angry-face')
-    angryFace.style.visibility = 'visible'
-    angryFace.style.animation = 'angryAnimation 2s ease-out'
-
-    // Cacher l'emoji après l'animation
-    setTimeout(() => {
-      angryFace.style.visibility = 'hidden'
-      angryFace.style.animation = 'none'
-    }, 2000)
-
-    // Pluie de pouces vers le bas
-    const duration = 2000
-    const animationEnd = Date.now() + duration
-
-    const thumbsDownRain = setInterval(() => {
-      const timeLeft = animationEnd - Date.now()
-
-      if (timeLeft <= 0) {
-        clearInterval(thumbsDownRain)
-        return
-      }
-
-      // Créer un emoji 👎 qui tombe
-      const thumb = document.createElement('div')
-      thumb.className = 'thumbs-down-rain'
-      thumb.textContent = '👎'
-      thumb.style.left = Math.random() * 100 + '%'
-      thumb.style.top = '-100px'
-      thumb.style.animationDuration = Math.random() * 1.5 + 1.5 + 's'
-
-      document.body.appendChild(thumb)
-
-      // Supprimer l'élément après l'animation
-      setTimeout(() => {
-        thumb.remove()
-      }, 3500)
-    }, 150)
-  }
-}
-
-function newQuestion() {
-  // Ne générer une question que si le jeu a démarré
-  if (!gameStarted) {
-    return
-  }
-
-  // Utiliser le gestionnaire de difficulté pour générer une question adaptée
-  if (difficultyManager) {
-    const question = difficultyManager.generateQuestion()
-    valueA = question.valueA
-    valueB = question.valueB
-    operand = question.operand
-  } else {
-    // Fallback si le gestionnaire n'est pas initialisé
-    valueA = randomInteger()
-    valueB = randomInteger()
-    operand = ['+', '×'][randomInteger() % 2]
-  }
-
-  document.querySelector('.question-title').innerText =
-    `${valueA} ${operand} ${valueB} = ?`
-  document.querySelector('input').value = ''
-
-  // Démarrer le chronomètre pour cette question
-  questionStartTime = Date.now()
-
-  // Remettre le focus sur le champ de réponse
-  document.getElementById('answer-input').focus()
-}
-
-function closeModal() {
-  document.getElementById('congratulations-modal').close()
-
-  // Réinitialiser les compteurs
-  correctAnswers = 0
-  startTime = null
-  timerInterval = null
-  questionStartTime = null
-  gameStarted = false
-
-  // Réinitialiser l'affichage
-  document.getElementById('score').textContent = correctAnswers
-  document.getElementById('progress-bar').value = correctAnswers
-  updateTimerDisplay()
-
-  // Retourner à l'écran de démarrage
-  document.getElementById('game-screen').style.display = 'none'
-  document.getElementById('start-screen').style.display = 'block'
-}
-
-// Initialiser le gestionnaire de difficulté au chargement
-document.addEventListener('DOMContentLoaded', () => {
-  difficultyManager = new DifficultyManager()
-  updateDifficultyDisplay()
-  // Ne pas appeler newQuestion() ici, on attend le clic sur "Démarrer"
+  }))
 })

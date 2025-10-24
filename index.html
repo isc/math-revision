@@ -8,58 +8,84 @@
       href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.orange.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="container">
+    <main class="container" x-data="gameState()">
       <article>
         <header>
           <hgroup>
-            <h4 id="difficulty-level">🌱 Débutant</h4>
-            <p id="difficulty-stats">
-              Questions: 0 | Réussite: 0% | Temps moyen: 0s
-            </p>
+            <h4
+              x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+            ></h4>
+            <p
+              x-text="`Questions: ${difficultyStats.questionsAtLevel} | Réussite: ${difficultyStats.successRate}% | Temps moyen: ${difficultyStats.averageTime}s`"
+            ></p>
           </hgroup>
         </header>
       </article>
-      <div id="start-screen" style="text-align: center">
+
+      <!-- Écran de démarrage -->
+      <div x-show="!gameStarted" style="text-align: center">
         <h1>Prêt à commencer ?</h1>
-        <button onclick="startGame()">🚀 Démarrer</button>
+        <button @click="startGame">🚀 Démarrer</button>
       </div>
-      <div id="game-screen" style="display: none">
+
+      <!-- Écran de jeu -->
+      <div x-show="gameStarted" x-cloak>
         <div class="progress-section">
           <div class="progress-header">
-            <label for="progress-bar" class="progress-label"
-              >Progression : <span id="score">0</span> / 10</label
-            >
+            <label for="progress-bar" class="progress-label">
+              Progression : <span x-text="correctAnswers"></span> / 10
+            </label>
             <div class="timer-section">
-              <label class="timer-label"
-                >⏱️ <span id="timer-display">0:00</span></label
-              >
+              <label class="timer-label">
+                ⏱️ <span x-text="timerDisplay"></span>
+              </label>
             </div>
           </div>
-          <progress id="progress-bar" value="0" max="10"></progress>
+          <progress
+            id="progress-bar"
+            :value="correctAnswers"
+            max="10"
+            value="0"
+          ></progress>
         </div>
-        <h1 class="question-title"></h1>
-        <form onsubmit="checkAnswer(); return false">
+
+        <h1 class="question-title" x-text="questionText"></h1>
+
+        <form @submit.prevent="checkAnswer">
           <fieldset role="group">
-            <input id="answer-input" type="number" />
-            <button>Vérifier</button>
+            <input
+              x-ref="answerInput"
+              x-model="userAnswer"
+              type="number"
+              autocomplete="off"
+            />
+            <button type="submit">Vérifier</button>
           </fieldset>
         </form>
       </div>
+
+      <!-- Emojis d'animation -->
       <div id="thumbs-up" class="emoji-big">👍</div>
       <div id="angry-face" class="emoji-big">😡</div>
-      <dialog id="congratulations-modal">
+
+      <!-- Modale de félicitations -->
+      <dialog x-ref="congratsModal">
         <article>
           <header>
             <h2>🎉 Félicitations !</h2>
           </header>
           <p>Vous avez atteint l'objectif de 10 bonnes réponses !</p>
-          <p>⏱️ Temps réalisé : <strong id="final-time"></strong></p>
+          <p>⏱️ Temps réalisé : <strong x-text="finalTimeText"></strong></p>
 
           <footer>
-            <button onclick="closeModal()">Continuer</button>
+            <button @click="closeModal">Continuer</button>
           </footer>
 
           <div id="scoreboard">
@@ -72,14 +98,27 @@
                   <th>Date</th>
                 </tr>
               </thead>
-              <tbody id="scoreboard-body">
-                <!-- Les scores seront ajoutés dynamiquement -->
+              <tbody>
+                <template x-for="(score, index) in scoreboard" :key="index">
+                  <tr :class="{ 'current-score': score.isCurrent }">
+                    <td x-text="index === 0 ? '👑' : index + 1"></td>
+                    <td>
+                      <strong x-text="formatTime(score.time)"></strong>
+                      <span x-show="score.isCurrent"> 🆕</span>
+                    </td>
+                    <td x-text="formatDate(score.date)"></td>
+                  </tr>
+                </template>
+                <tr x-show="scoreboard.length === 0">
+                  <td colspan="3">Aucun score enregistré</td>
+                </tr>
               </tbody>
             </table>
           </div>
         </article>
       </dialog>
     </main>
+
     <script src="difficulty.js"></script>
     <script src="script.js"></script>
   </body>
