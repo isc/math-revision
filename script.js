@@ -4,6 +4,8 @@ let operand
 let correctAnswers = 0
 let startTime = null
 let timerInterval = null
+let questionStartTime = null // Timer pour chaque question individuelle
+let difficultyManager = null // Gestionnaire de difficulté
 
 // Gestion du scoreboard
 const SCOREBOARD_KEY = 'math-revision-scoreboard'
@@ -99,6 +101,22 @@ function randomInteger() {
   return Math.round(Math.random() * 10)
 }
 
+// Mettre à jour l'affichage du niveau de difficulté
+function updateDifficultyDisplay() {
+  const stats = difficultyManager.getStats()
+  const levelDisplay = document.getElementById('difficulty-level')
+
+  if (levelDisplay) {
+    levelDisplay.textContent = `${stats.levelIcon} ${stats.levelName}`
+  }
+
+  // Mettre à jour les statistiques si l'élément existe
+  const statsDisplay = document.getElementById('difficulty-stats')
+  if (statsDisplay) {
+    statsDisplay.textContent = `Questions: ${stats.questionsAtLevel} | Réussite: ${stats.successRate}% | Temps moyen: ${stats.averageTime}s`
+  }
+}
+
 function updateTimerDisplay() {
   if (startTime === null) {
     document.getElementById('timer-display').textContent = '0:00'
@@ -116,6 +134,18 @@ function checkAnswer() {
   const value = document.querySelector('input').value
   const correctValue = operand == '+' ? valueA + valueB : valueA * valueB
   const isCorrect = correctValue == value
+
+  // Calculer le temps de réponse pour cette question
+  const questionEndTime = Date.now()
+  const questionTime = questionStartTime
+    ? (questionEndTime - questionStartTime) / 1000
+    : 0
+
+  // Enregistrer la réponse dans le gestionnaire de difficulté
+  if (difficultyManager) {
+    difficultyManager.recordAnswer(isCorrect, questionTime, operand)
+    updateDifficultyDisplay()
+  }
 
   if (isCorrect) {
     // Incrémenter le score d'abord
@@ -291,12 +321,25 @@ function checkAnswer() {
 }
 
 function newQuestion() {
-  valueA = randomInteger()
-  valueB = randomInteger()
-  operand = ['+', '×'][randomInteger() % 2]
+  // Utiliser le gestionnaire de difficulté pour générer une question adaptée
+  if (difficultyManager) {
+    const question = difficultyManager.generateQuestion()
+    valueA = question.valueA
+    valueB = question.valueB
+    operand = question.operand
+  } else {
+    // Fallback si le gestionnaire n'est pas initialisé
+    valueA = randomInteger()
+    valueB = randomInteger()
+    operand = ['+', '×'][randomInteger() % 2]
+  }
+
   document.querySelector('.question-title').innerText =
     `${valueA} ${operand} ${valueB} = ?`
   document.querySelector('input').value = ''
+
+  // Démarrer le chronomètre pour cette question
+  questionStartTime = Date.now()
 }
 
 function closeModal() {
@@ -304,10 +347,16 @@ function closeModal() {
   correctAnswers = 0
   startTime = null
   timerInterval = null
+  questionStartTime = null
   document.getElementById('score').textContent = correctAnswers
   document.getElementById('progress-bar').value = correctAnswers
   updateTimerDisplay()
   newQuestion()
 }
 
-newQuestion()
+// Initialiser le gestionnaire de difficulté au chargement
+document.addEventListener('DOMContentLoaded', () => {
+  difficultyManager = new DifficultyManager()
+  updateDifficultyDisplay()
+  newQuestion() // Démarrer avec une première question APRÈS l'initialisation
+})
