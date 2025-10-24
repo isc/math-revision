@@ -22,26 +22,32 @@
           </hgroup>
         </header>
       </article>
-      <div class="progress-section">
-        <div class="progress-header">
-          <label for="progress-bar" class="progress-label"
-            >Progression : <span id="score">0</span> / 10</label
-          >
-          <div class="timer-section">
-            <label class="timer-label"
-              >⏱️ <span id="timer-display">0:00</span></label
-            >
-          </div>
-        </div>
-        <progress id="progress-bar" value="0" max="10"></progress>
+      <div id="start-screen" style="text-align: center">
+        <h1>Prêt à commencer ?</h1>
+        <button onclick="startGame()">🚀 Démarrer</button>
       </div>
-      <h1 class="question-title"></h1>
-      <form onsubmit="checkAnswer(); return false">
-        <fieldset role="group">
-          <input autofocus type="number" />
-          <button>Vérifier</button>
-        </fieldset>
-      </form>
+      <div id="game-screen" style="display: none">
+        <div class="progress-section">
+          <div class="progress-header">
+            <label for="progress-bar" class="progress-label"
+              >Progression : <span id="score">0</span> / 10</label
+            >
+            <div class="timer-section">
+              <label class="timer-label"
+                >⏱️ <span id="timer-display">0:00</span></label
+              >
+            </div>
+          </div>
+          <progress id="progress-bar" value="0" max="10"></progress>
+        </div>
+        <h1 class="question-title"></h1>
+        <form onsubmit="checkAnswer(); return false">
+          <fieldset role="group">
+            <input id="answer-input" type="number" />
+            <button>Vérifier</button>
+          </fieldset>
+        </form>
+      </div>
       <div id="thumbs-up" class="emoji-big">👍</div>
       <div id="angry-face" class="emoji-big">😡</div>
       <dialog id="congratulations-modal">
@@ -51,6 +57,10 @@
           </header>
           <p>Vous avez atteint l'objectif de 10 bonnes réponses !</p>
           <p>⏱️ Temps réalisé : <strong id="final-time"></strong></p>
+
+          <footer>
+            <button onclick="closeModal()">Continuer</button>
+          </footer>
 
           <div id="scoreboard">
             <h3>🏆 Top 10 des meilleurs temps</h3>
@@ -67,10 +77,6 @@
               </tbody>
             </table>
           </div>
-
-          <footer>
-            <button onclick="closeModal()">Continuer</button>
-          </footer>
         </article>
       </dialog>
     </main>

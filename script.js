@@ -6,6 +6,7 @@ let startTime = null
 let timerInterval = null
 let questionStartTime = null // Timer pour chaque question individuelle
 let difficultyManager = null // Gestionnaire de difficulté
+let gameStarted = false // Indicateur si le jeu a démarré
 
 // Gestion du scoreboard
 const SCOREBOARD_KEY = 'math-revision-scoreboard'
@@ -101,6 +102,26 @@ function randomInteger() {
   return Math.round(Math.random() * 10)
 }
 
+// Démarrer le jeu
+function startGame() {
+  // Masquer l'écran de démarrage
+  document.getElementById('start-screen').style.display = 'none'
+
+  // Afficher l'écran de jeu
+  document.getElementById('game-screen').style.display = 'block'
+
+  // Démarrer le timer de la partie
+  startTime = Date.now()
+  timerInterval = setInterval(updateTimerDisplay, 100)
+
+  // Générer et afficher la première question
+  gameStarted = true
+  newQuestion()
+
+  // Mettre le focus sur le champ de réponse
+  document.getElementById('answer-input').focus()
+}
+
 // Mettre à jour l'affichage du niveau de difficulté
 function updateDifficultyDisplay() {
   const stats = difficultyManager.getStats()
@@ -152,12 +173,6 @@ function checkAnswer() {
     correctAnswers++
     document.getElementById('score').textContent = correctAnswers
     document.getElementById('progress-bar').value = correctAnswers
-
-    // Démarrer le timer à la première bonne réponse
-    if (correctAnswers === 1) {
-      startTime = Date.now()
-      timerInterval = setInterval(updateTimerDisplay, 100)
-    }
 
     // Afficher le pouce vers le haut
     const thumbsUp = document.getElementById('thumbs-up')
@@ -321,6 +336,11 @@ function checkAnswer() {
 }
 
 function newQuestion() {
+  // Ne générer une question que si le jeu a démarré
+  if (!gameStarted) {
+    return
+  }
+
   // Utiliser le gestionnaire de difficulté pour générer une question adaptée
   if (difficultyManager) {
     const question = difficultyManager.generateQuestion()
@@ -340,23 +360,34 @@ function newQuestion() {
 
   // Démarrer le chronomètre pour cette question
   questionStartTime = Date.now()
+
+  // Remettre le focus sur le champ de réponse
+  document.getElementById('answer-input').focus()
 }
 
 function closeModal() {
   document.getElementById('congratulations-modal').close()
+
+  // Réinitialiser les compteurs
   correctAnswers = 0
   startTime = null
   timerInterval = null
   questionStartTime = null
+  gameStarted = false
+
+  // Réinitialiser l'affichage
   document.getElementById('score').textContent = correctAnswers
   document.getElementById('progress-bar').value = correctAnswers
   updateTimerDisplay()
-  newQuestion()
+
+  // Retourner à l'écran de démarrage
+  document.getElementById('game-screen').style.display = 'none'
+  document.getElementById('start-screen').style.display = 'block'
 }
 
 // Initialiser le gestionnaire de difficulté au chargement
 document.addEventListener('DOMContentLoaded', () => {
   difficultyManager = new DifficultyManager()
   updateDifficultyDisplay()
-  newQuestion() // Démarrer avec une première question APRÈS l'initialisation
+  // Ne pas appeler newQuestion() ici, on attend le clic sur "Démarrer"
 })
