@@ -6,6 +6,15 @@ const MAX_HISTORY = 20
 // Configuration des niveaux de difficulté
 const DIFFICULTY_LEVELS = {
   1: {
+    name: 'Grande Section',
+    additionWeight: 90,
+    multiplicationTables: [0, 1, 2], // Tables très faciles
+    icon: '🫘',
+    maxTime: 10,
+    minValue: 0,
+    maxValue: 7
+  },
+  2: {
     name: 'Débutant',
     additionWeight: 80,
     multiplicationTables: [2, 5, 10], // Tables faciles
@@ -14,7 +23,7 @@ const DIFFICULTY_LEVELS = {
     minValue: 0, // Permet +0, ×0, +1, ×1
     maxValue: 10
   },
-  2: {
+  3: {
     name: 'Apprenti',
     additionWeight: 60,
     multiplicationTables: [2, 5, 10],
@@ -23,7 +32,7 @@ const DIFFICULTY_LEVELS = {
     minValue: 0, // Permet +0, ×0, +1, ×1
     maxValue: 10
   },
-  3: {
+  4: {
     name: 'Intermédiaire',
     additionWeight: 40,
     multiplicationTables: [2, 3, 4, 5, 6, 10],
@@ -32,7 +41,7 @@ const DIFFICULTY_LEVELS = {
     minValue: 0, // Permet +0, ×0, +1, ×1
     maxValue: 10
   },
-  4: {
+  5: {
     name: 'Avancé',
     additionWeight: 30,
     multiplicationTables: [2, 3, 4, 5, 6, 10], // Toutes sauf 7, 8, 9
@@ -41,7 +50,7 @@ const DIFFICULTY_LEVELS = {
     minValue: 1, // Exclut +0 et ×0, mais permet +1 et ×1
     maxValue: 10
   },
-  5: {
+  6: {
     name: 'Expert',
     additionWeight: 15,
     multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], // Toutes
@@ -57,6 +66,7 @@ class DifficultyManager {
     this.currentLevel = 1
     this.questionsAtLevel = 0
     this.history = []
+    this.maxLevel = Object.keys(DIFFICULTY_LEVELS).length
     this.load()
   }
 
@@ -211,7 +221,7 @@ class DifficultyManager {
     }
 
     // Critères de progression
-    if (this.currentLevel < 5) {
+    if (this.currentLevel < this.maxLevel) {
       // Minimum 10 questions au niveau actuel
       if (this.questionsAtLevel < 10) {
         return
@@ -232,7 +242,7 @@ class DifficultyManager {
 
   // Monter d'un niveau
   upgradeLevel() {
-    if (this.currentLevel < 5) {
+    if (this.currentLevel < this.maxLevel) {
       this.currentLevel++
       this.questionsAtLevel = 0
       console.log(`🎉 Niveau augmenté : ${this.getCurrentLevel().name}`)
