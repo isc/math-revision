@@ -103,7 +103,7 @@
           <div id="scoreboard">
             <h3>🏆 Top 10 des meilleurs temps</h3>
             <h4
-              x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+              x-text="completedGameLevelStats ? `${completedGameLevelStats.levelIcon} ${completedGameLevelStats.levelName}` : `${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
             ></h4>
             <table id="scoreboard-table">
               <thead>

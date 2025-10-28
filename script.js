@@ -9,6 +9,7 @@ document.addEventListener('alpine:init', () => {
     userAnswer: '',
     gameStarted: false,
     questionText: '',
+    completedGameLevel: null, // Niveau du jeu terminé (avant changement)
 
     // Timer
     startTime: null,
@@ -29,6 +30,7 @@ document.addEventListener('alpine:init', () => {
 
     // Changement de niveau
     levelChange: null,
+    completedGameLevelStats: null, // Stats du niveau terminé
 
     // Initialisation
     init() {
@@ -63,13 +65,22 @@ document.addEventListener('alpine:init', () => {
         this.valueA = question.valueA
         this.valueB = question.valueB
         this.operand = question.operand
+
+        // Gérer l'affichage selon le type d'opération
+        if (this.operand === '×?') {
+          // Division sous forme "a × ? = result"
+          this.questionText = `${this.valueA} × ? = ${question.result}`
+        } else {
+          // Addition ou multiplication normale
+          this.questionText = `${this.valueA} ${this.operand} ${this.valueB} = ?`
+        }
       } else {
         this.valueA = this.randomInteger()
         this.valueB = this.randomInteger()
         this.operand = ['+', '×'][this.randomInteger() % 2]
+        this.questionText = `${this.valueA} ${this.operand} ${this.valueB} = ?`
       }
 
-      this.questionText = `${this.valueA} ${this.operand} ${this.valueB} = ?`
       this.userAnswer = ''
       this.questionStartTime = Date.now()
 
@@ -80,10 +91,15 @@ document.addEventListener('alpine:init', () => {
 
     // Vérifier la réponse
     checkAnswer() {
-      const correctValue =
-        this.operand === '+'
-          ? this.valueA + this.valueB
-          : this.valueA * this.valueB
+      let correctValue
+      if (this.operand === '+') {
+        correctValue = this.valueA + this.valueB
+      } else if (this.operand === '×') {
+        correctValue = this.valueA * this.valueB
+      } else if (this.operand === '×?') {
+        // Pour la division, la réponse correcte est valueB
+        correctValue = this.valueB
+      }
       const isCorrect = correctValue == this.userAnswer
 
       // Calculer le temps de réponse
@@ -148,6 +164,13 @@ document.addEventListener('alpine:init', () => {
       this.finalTimeText =
         minutes > 0 ? `${minutes} min ${seconds} sec` : `${seconds} secondes`
 
+      // Sauvegarder le niveau et les stats du jeu terminé AVANT tout changement
+      this.completedGameLevel = this.difficultyManager.currentLevel
+      this.completedGameLevelStats = {
+        levelName: this.difficultyStats.levelName,
+        levelIcon: this.difficultyStats.levelIcon
+      }
+
       // Sauvegarder et afficher le scoreboard
       this.saveScore(elapsedTime)
       this.loadScoreboard(elapsedTime)
@@ -178,6 +201,8 @@ document.addEventListener('alpine:init', () => {
       this.timerDisplay = '0:00'
       this.userAnswer = ''
       this.levelChange = null
+      this.completedGameLevel = null
+      this.completedGameLevelStats = null
     },
 
     // Fermer l'écran de changement de niveau

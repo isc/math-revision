@@ -8,6 +8,8 @@ const DIFFICULTY_LEVELS = {
   1: {
     name: 'Grande Section',
     additionWeight: 90,
+    multiplicationWeight: 10,
+    divisionWeight: 0,
     multiplicationTables: [0, 1, 2], // Tables très faciles
     icon: '🫘',
     maxTime: 10,
@@ -17,6 +19,8 @@ const DIFFICULTY_LEVELS = {
   2: {
     name: 'Débutant',
     additionWeight: 80,
+    multiplicationWeight: 20,
+    divisionWeight: 0,
     multiplicationTables: [2, 5, 10], // Tables faciles
     icon: '🌱',
     maxTime: 8,
@@ -26,6 +30,8 @@ const DIFFICULTY_LEVELS = {
   3: {
     name: 'Apprenti',
     additionWeight: 60,
+    multiplicationWeight: 40,
+    divisionWeight: 0,
     multiplicationTables: [2, 5, 10],
     icon: '🌿',
     maxTime: 7,
@@ -35,6 +41,8 @@ const DIFFICULTY_LEVELS = {
   4: {
     name: 'Intermédiaire',
     additionWeight: 40,
+    multiplicationWeight: 60,
+    divisionWeight: 0,
     multiplicationTables: [2, 3, 4, 5, 6, 10],
     icon: '🌳',
     maxTime: 6,
@@ -44,6 +52,8 @@ const DIFFICULTY_LEVELS = {
   5: {
     name: 'Avancé',
     additionWeight: 30,
+    multiplicationWeight: 70,
+    divisionWeight: 0,
     multiplicationTables: [2, 3, 4, 5, 6, 10], // Toutes sauf 7, 8, 9
     icon: '⭐',
     maxTime: 5,
@@ -53,10 +63,34 @@ const DIFFICULTY_LEVELS = {
   6: {
     name: 'Expert',
     additionWeight: 15,
+    multiplicationWeight: 85,
+    divisionWeight: 0,
     multiplicationTables: [3, 4, 5, 6, 7, 8, 9, 10], // Toutes
     icon: '🏆',
     maxTime: 5,
     minValue: 3,
+    maxValue: 10
+  },
+  7: {
+    name: 'Division (Expert)',
+    additionWeight: 0,
+    multiplicationWeight: 20,
+    divisionWeight: 80,
+    multiplicationTables: [2, 3, 4, 5, 6, 10], // Tables modérées
+    icon: '🎓',
+    maxTime: 8,
+    minValue: 2,
+    maxValue: 10
+  },
+  8: {
+    name: 'Division Master',
+    additionWeight: 0,
+    multiplicationWeight: 10,
+    divisionWeight: 90,
+    multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], // Toutes les tables
+    icon: '🏅',
+    maxTime: 6,
+    minValue: 2,
     maxValue: 10
   }
 }
@@ -109,7 +143,7 @@ class DifficultyManager {
     const random = Math.random() * 100
     const range = level.maxValue - level.minValue + 1
 
-    let operand, valueA, valueB
+    let operand, valueA, valueB, result
 
     // Déterminer le type d'opération selon les poids
     if (random < level.additionWeight) {
@@ -117,7 +151,7 @@ class DifficultyManager {
       operand = '+'
       valueA = Math.floor(Math.random() * range) + level.minValue
       valueB = Math.floor(Math.random() * range) + level.minValue
-    } else {
+    } else if (random < level.additionWeight + level.multiplicationWeight) {
       // Multiplication
       operand = '×'
       // Choisir une table parmi celles autorisées au niveau actuel
@@ -129,9 +163,20 @@ class DifficultyManager {
       if (Math.random() > 0.5) {
         ;[valueA, valueB] = [valueB, valueA]
       }
+    } else {
+      // Division (sous forme "a × ? = result")
+      operand = '×?'
+      // Choisir une table parmi celles autorisées au niveau actuel
+      const tables = level.multiplicationTables
+      valueA = tables[Math.floor(Math.random() * tables.length)]
+      valueB = Math.floor(Math.random() * range) + level.minValue
+
+      // Le résultat est a × b, et on cherche b
+      result = valueA * valueB
+      // On garde valueB comme réponse attendue
     }
 
-    return { valueA, valueB, operand }
+    return { valueA, valueB, operand, result }
   }
 
   // Enregistrer une réponse
