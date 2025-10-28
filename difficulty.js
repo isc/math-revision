@@ -53,10 +53,10 @@ const DIFFICULTY_LEVELS = {
   6: {
     name: 'Expert',
     additionWeight: 15,
-    multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], // Toutes
+    multiplicationTables: [3, 4, 5, 6, 7, 8, 9, 10], // Toutes
     icon: '🏆',
     maxTime: 5,
-    minValue: 2, // Exclut +0, ×0, +1, ×1
+    minValue: 3,
     maxValue: 10
   }
 }
