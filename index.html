@@ -57,6 +57,37 @@
       <div id="thumbs-up" class="emoji-big">👍</div>
       <div id="angry-face" class="emoji-big">😡</div>
 
+      <!-- Modale de changement de niveau -->
+      <dialog x-ref="levelChangeModal">
+        <article>
+          <template x-if="levelChange && levelChange.type === 'upgrade'">
+            <div style="text-align: center">
+              <div
+                style="font-size: 100px"
+                x-text="levelChange.newLevelIcon"
+              ></div>
+              <h2>Niveau supérieur !</h2>
+              <h3 x-text="levelChange.newLevelName"></h3>
+              <p>Bravo, tu progresses ! 🎉</p>
+            </div>
+          </template>
+          <template x-if="levelChange && levelChange.type === 'downgrade'">
+            <div style="text-align: center">
+              <div
+                style="font-size: 100px"
+                x-text="levelChange.newLevelIcon"
+              ></div>
+              <h2>Changement de niveau</h2>
+              <h3 x-text="levelChange.newLevelName"></h3>
+              <p>Continue, tu vas y arriver ! 💪</p>
+            </div>
+          </template>
+          <footer>
+            <button @click="closeLevelChangeScreen">Continuer</button>
+          </footer>
+        </article>
+      </dialog>
+
       <!-- Modale de félicitations -->
       <dialog x-ref="congratsModal">
         <article>

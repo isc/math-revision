@@ -27,6 +27,9 @@ document.addEventListener('alpine:init', () => {
     scoreboard: [],
     finalTimeText: '',
 
+    // Changement de niveau
+    levelChange: null,
+
     // Initialisation
     init() {
       this.difficultyManager = new DifficultyManager()
@@ -148,12 +151,18 @@ document.addEventListener('alpine:init', () => {
       // Sauvegarder et afficher le scoreboard
       this.saveScore(elapsedTime)
       this.loadScoreboard(elapsedTime)
-
-      // Afficher la modale
-      this.$refs.congratsModal.showModal()
-
-      // Pluie de pouces vers le haut
       this.showThumbsUpRain()
+
+      // Vérifier s'il y a un changement de niveau en attente
+      if (
+        this.difficultyManager &&
+        this.difficultyManager.hasPendingLevelChange()
+      ) {
+        this.levelChange = this.difficultyManager.getPendingLevelChange()
+        this.$refs.levelChangeModal.showModal()
+      } else {
+        this.$refs.congratsModal.showModal()
+      }
     },
 
     // Fermer la modale
@@ -168,6 +177,21 @@ document.addEventListener('alpine:init', () => {
       this.questionStartTime = null
       this.timerDisplay = '0:00'
       this.userAnswer = ''
+      this.levelChange = null
+    },
+
+    // Fermer l'écran de changement de niveau
+    closeLevelChangeScreen() {
+      this.$refs.levelChangeModal.close()
+
+      // Appliquer le changement de niveau
+      if (this.difficultyManager) {
+        this.difficultyManager.applyPendingLevelChange()
+        this.updateDifficultyDisplay()
+      }
+
+      // Afficher la modale de félicitations
+      this.$refs.congratsModal.showModal()
     },
 
     // Timer

@@ -67,6 +67,7 @@ class DifficultyManager {
     this.questionsAtLevel = 0
     this.history = []
     this.maxLevel = Object.keys(DIFFICULTY_LEVELS).length
+    this.pendingLevelChange = null // { type: 'upgrade' | 'downgrade', newLevel: number }
     this.load()
   }
 
@@ -208,14 +209,14 @@ class DifficultyManager {
     if (this.currentLevel > 1) {
       // Trop d'erreurs consécutives
       if (consecutiveErrors >= 3) {
-        this.downgradeLevel()
+        this.markLevelDowngrade()
         return
       }
 
       // Taux de réussite trop faible sur les 5 dernières
       const recentSuccessRate = this.getSuccessRate(5)
       if (this.history.length >= 5 && recentSuccessRate < 60) {
-        this.downgradeLevel()
+        this.markLevelDowngrade()
         return
       }
     }
@@ -233,92 +234,66 @@ class DifficultyManager {
       // Temps de réponse correct
       const hasGoodTime = avgTime <= level.maxTime
 
-      // Si les deux conditions sont remplies, on monte de niveau
+      // Si les deux conditions sont remplies, on marque une montée de niveau en attente
       if (hasGoodSuccessRate && hasGoodTime) {
-        this.upgradeLevel()
+        this.markLevelUpgrade()
       }
     }
   }
 
-  // Monter d'un niveau
-  upgradeLevel() {
+  // Marquer une montée de niveau en attente
+  markLevelUpgrade() {
     if (this.currentLevel < this.maxLevel) {
-      this.currentLevel++
-      this.questionsAtLevel = 0
-      console.log(`🎉 Niveau augmenté : ${this.getCurrentLevel().name}`)
-
-      // Notifier l'utilisateur
-      this.showLevelUpNotification()
+      this.pendingLevelChange = {
+        type: 'upgrade',
+        newLevel: this.currentLevel + 1
+      }
     }
   }
 
-  // Descendre d'un niveau
-  downgradeLevel() {
+  // Marquer une descente de niveau en attente
+  markLevelDowngrade() {
     if (this.currentLevel > 1) {
-      this.currentLevel--
-      this.questionsAtLevel = 0
-      console.log(`📉 Niveau diminué : ${this.getCurrentLevel().name}`)
-
-      // Notifier l'utilisateur
-      this.showLevelDownNotification()
+      this.pendingLevelChange = {
+        type: 'downgrade',
+        newLevel: this.currentLevel - 1
+      }
     }
   }
 
-  // Afficher une notification de montée de niveau
-  showLevelUpNotification() {
-    const level = this.getCurrentLevel()
-    const notification = document.createElement('article')
-    notification.className = 'level-notification'
-    notification.innerHTML = `
-      <strong>${level.icon} Niveau supérieur !</strong>
-      <p>${level.name}</p>
-    `
-    document.body.appendChild(notification)
-
-    // Animation d'entrée
-    setTimeout(() => {
-      notification.classList.add('show')
-    }, 10)
-
-    // Retirer après 3 secondes
-    setTimeout(() => {
-      notification.classList.remove('show')
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
-    }, 3000)
-
-    // Confettis pour célébrer
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    })
+  // Vérifier s'il y a un changement de niveau en attente
+  hasPendingLevelChange() {
+    return this.pendingLevelChange !== null
   }
 
-  // Afficher une notification de descente de niveau
-  showLevelDownNotification() {
-    const level = this.getCurrentLevel()
-    const notification = document.createElement('article')
-    notification.className = 'level-notification'
-    notification.innerHTML = `
-      <strong>${level.icon} Retour au niveau précédent</strong>
-      <p>${level.name} - Continue, tu vas y arriver !</p>
-    `
-    document.body.appendChild(notification)
+  // Obtenir les informations du niveau en attente
+  getPendingLevelChange() {
+    if (!this.pendingLevelChange) return null
 
-    // Animation d'entrée
-    setTimeout(() => {
-      notification.classList.add('show')
-    }, 10)
+    return {
+      type: this.pendingLevelChange.type,
+      newLevel: this.pendingLevelChange.newLevel,
+      newLevelName: DIFFICULTY_LEVELS[this.pendingLevelChange.newLevel].name,
+      newLevelIcon: DIFFICULTY_LEVELS[this.pendingLevelChange.newLevel].icon
+    }
+  }
 
-    // Retirer après 3 secondes
-    setTimeout(() => {
-      notification.classList.remove('show')
-      setTimeout(() => {
-        notification.remove()
-      }, 500)
-    }, 3000)
+  // Appliquer le changement de niveau en attente
+  applyPendingLevelChange() {
+    if (!this.pendingLevelChange) return null
+
+    const change = this.getPendingLevelChange()
+    this.currentLevel = this.pendingLevelChange.newLevel
+    this.questionsAtLevel = 0
+    this.pendingLevelChange = null
+    this.save()
+
+    return change
+  }
+
+  // Annuler le changement de niveau en attente
+  cancelPendingLevelChange() {
+    this.pendingLevelChange = null
   }
 
   // Obtenir les statistiques pour l'affichage
