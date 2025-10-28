@@ -70,6 +70,9 @@ document.addEventListener('alpine:init', () => {
         if (this.operand === '×?') {
           // Division sous forme "a × ? = result"
           this.questionText = `${this.valueA} × ? = ${question.result}`
+        } else if (this.operand === '÷') {
+          // Division avec vraie notation "result ÷ a = ?"
+          this.questionText = `${question.result} ÷ ${this.valueA} = ?`
         } else {
           // Addition ou multiplication normale
           this.questionText = `${this.valueA} ${this.operand} ${this.valueB} = ?`
@@ -96,8 +99,8 @@ document.addEventListener('alpine:init', () => {
         correctValue = this.valueA + this.valueB
       } else if (this.operand === '×') {
         correctValue = this.valueA * this.valueB
-      } else if (this.operand === '×?') {
-        // Pour la division, la réponse correcte est valueB
+      } else if (this.operand === '×?' || this.operand === '÷') {
+        // Pour les divisions (les deux notations), la réponse correcte est valueB
         correctValue = this.valueB
       }
       const isCorrect = correctValue == this.userAnswer

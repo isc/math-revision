@@ -10,6 +10,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 90,
     multiplicationWeight: 10,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [0, 1, 2], // Tables très faciles
     icon: '🫘',
     maxTime: 10,
@@ -21,6 +22,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 80,
     multiplicationWeight: 20,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [2, 5, 10], // Tables faciles
     icon: '🌱',
     maxTime: 8,
@@ -32,6 +34,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 60,
     multiplicationWeight: 40,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [2, 5, 10],
     icon: '🌿',
     maxTime: 7,
@@ -43,6 +46,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 40,
     multiplicationWeight: 60,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [2, 3, 4, 5, 6, 10],
     icon: '🌳',
     maxTime: 6,
@@ -54,6 +58,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 30,
     multiplicationWeight: 70,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [2, 3, 4, 5, 6, 10], // Toutes sauf 7, 8, 9
     icon: '⭐',
     maxTime: 5,
@@ -65,6 +70,7 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 15,
     multiplicationWeight: 85,
     divisionWeight: 0,
+    realDivisionWeight: 0,
     multiplicationTables: [3, 4, 5, 6, 7, 8, 9, 10], // Toutes
     icon: '🏆',
     maxTime: 5,
@@ -76,7 +82,8 @@ const DIFFICULTY_LEVELS = {
     additionWeight: 0,
     multiplicationWeight: 20,
     divisionWeight: 80,
-    multiplicationTables: [2, 3, 4, 5, 6, 10], // Tables modérées
+    realDivisionWeight: 0,
+    multiplicationTables: [2, 3, 4, 5, 6, 10],
     icon: '🎓',
     maxTime: 8,
     minValue: 2,
@@ -86,8 +93,9 @@ const DIFFICULTY_LEVELS = {
     name: 'Division Master',
     additionWeight: 0,
     multiplicationWeight: 10,
-    divisionWeight: 90,
-    multiplicationTables: [2, 3, 4, 5, 6, 7, 8, 9, 10], // Toutes les tables
+    divisionWeight: 0,
+    realDivisionWeight: 90, // Vraie notation ÷
+    multiplicationTables: [3, 4, 5, 6, 7, 8, 9, 10],
     icon: '🏅',
     maxTime: 6,
     minValue: 2,
@@ -163,7 +171,10 @@ class DifficultyManager {
       if (Math.random() > 0.5) {
         ;[valueA, valueB] = [valueB, valueA]
       }
-    } else {
+    } else if (
+      random <
+      level.additionWeight + level.multiplicationWeight + level.divisionWeight
+    ) {
       // Division (sous forme "a × ? = result")
       operand = '×?'
       // Choisir une table parmi celles autorisées au niveau actuel
@@ -172,6 +183,17 @@ class DifficultyManager {
       valueB = Math.floor(Math.random() * range) + level.minValue
 
       // Le résultat est a × b, et on cherche b
+      result = valueA * valueB
+      // On garde valueB comme réponse attendue
+    } else {
+      // Division avec vraie notation (result ÷ a = ?)
+      operand = '÷'
+      // Choisir une table parmi celles autorisées au niveau actuel
+      const tables = level.multiplicationTables
+      valueA = tables[Math.floor(Math.random() * tables.length)]
+      valueB = Math.floor(Math.random() * range) + level.minValue
+
+      // Le résultat est a × b, on divise result par a pour trouver b
       result = valueA * valueB
       // On garde valueB comme réponse attendue
     }
