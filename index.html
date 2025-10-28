@@ -94,7 +94,6 @@
           <header>
             <h2>🎉 Félicitations !</h2>
           </header>
-          <p>Vous avez atteint l'objectif de 10 bonnes réponses !</p>
           <p>⏱️ Temps réalisé : <strong x-text="finalTimeText"></strong></p>
 
           <footer>
@@ -103,6 +102,9 @@
 
           <div id="scoreboard">
             <h3>🏆 Top 10 des meilleurs temps</h3>
+            <h4
+              x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+            ></h4>
             <table id="scoreboard-table">
               <thead>
                 <tr>

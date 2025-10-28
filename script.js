@@ -227,14 +227,35 @@ document.addEventListener('alpine:init', () => {
     // Gestion du scoreboard
     saveScore(timeInSeconds) {
       const scoreboard = this.getScoreboard()
+      const currentLevel = this.difficultyManager.currentLevel
 
       scoreboard.push({
         time: timeInSeconds,
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        level: currentLevel
       })
 
-      scoreboard.sort((a, b) => a.time - b.time)
-      const topScores = scoreboard.slice(0, 10)
+      // Garder les 10 meilleurs scores PAR NIVEAU
+      const scoresByLevel = {}
+      scoreboard.forEach(score => {
+        // Ignorer les anciens scores sans niveau
+        if (!score.level) return
+
+        const level = score.level
+        if (!scoresByLevel[level]) {
+          scoresByLevel[level] = []
+        }
+        scoresByLevel[level].push(score)
+      })
+
+      // Garder top 10 pour chaque niveau
+      const topScores = []
+      Object.keys(scoresByLevel).forEach(level => {
+        const levelScores = scoresByLevel[level]
+          .sort((a, b) => a.time - b.time)
+          .slice(0, 10)
+        topScores.push(...levelScores)
+      })
 
       localStorage.setItem(
         'math-revision-scoreboard',
@@ -248,12 +269,19 @@ document.addEventListener('alpine:init', () => {
     },
 
     loadScoreboard(currentTime) {
-      const scores = this.getScoreboard()
-      this.scoreboard = scores.map((score, index) => ({
+      const allScores = this.getScoreboard()
+      const currentLevel = this.difficultyManager.currentLevel
+
+      // Filtrer les scores pour le niveau actuel uniquement
+      const levelScores = allScores
+        .filter(score => score.level === currentLevel)
+        .sort((a, b) => a.time - b.time)
+
+      this.scoreboard = levelScores.map((score, index) => ({
         ...score,
         isCurrent:
           score.time === currentTime &&
-          index === scores.findIndex(s => s.time === currentTime)
+          index === levelScores.findIndex(s => s.time === currentTime)
       }))
     },
 
