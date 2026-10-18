@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8" />
+    <title>Jeu d'Orthographe</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.orange.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="spelling-style.css" />
+  </head>
+  <body>
+    <main class="container" x-data="spellingGameState()">
+      <h4
+        x-text="`${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+      ></h4>
+
+      <!-- Écran de démarrage -->
+      <div x-show="!gameStarted" style="text-align: center">
+        <h1>Prêt à commencer ?</h1>
+        <p>Écris correctement les mots que tu vois en image !</p>
+        <button @click="startGame">🚀 Démarrer</button>
+      </div>
+
+      <!-- Écran de jeu -->
+      <div x-show="gameStarted" x-cloak>
+        <div class="progress-header">
+          <label>
+            Progression : <span x-text="correctAnswers"></span> / 10
+          </label>
+          <div class="timer-section">
+            <label> ⏱️ <span x-text="timerDisplay"></span> </label>
+          </div>
+        </div>
+        <progress :value="correctAnswers" max="10" value="0"></progress>
+
+        <!-- Image du mot à orthographier -->
+        <div class="word-image-container">
+          <img
+            :src="'images/' + currentImagePath"
+            :alt="'Image à orthographier'"
+            class="word-image"
+            @error="console.error('Erreur chargement image:', currentImagePath)"
+          />
+        </div>
+
+        <!-- Input texte pour orthographe -->
+        <form @submit.prevent="checkAnswer">
+          <fieldset role="group">
+            <input
+              x-ref="answerInput"
+              x-model="userAnswer"
+              type="text"
+              autocomplete="off"
+              placeholder="Écris le mot ici..."
+              autofocus
+            />
+            <button type="submit">Vérifier</button>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- Emojis d'animation -->
+      <div id="thumbs-up" class="emoji-big">👍</div>
+      <div id="angry-face" class="emoji-big">😡</div>
+
+      <!-- Modale pour afficher le mot correct -->
+      <dialog :open="showCorrectWordModal">
+        <article style="text-align: center;">
+          <h2>😢 Presque !</h2>
+          <p>La bonne réponse était :</p>
+          <h1 class="correct-word" x-text="correctWordDisplay"></h1>
+          <p><small>Continue, tu vas y arriver ! 💪</small></p>
+        </article>
+      </dialog>
+
+      <!-- Modale de changement de niveau -->
+      <dialog x-ref="levelChangeModal">
+        <article>
+          <template x-if="levelChange && levelChange.type === 'upgrade'">
+            <div style="text-align: center">
+              <div
+                style="font-size: 100px"
+                x-text="levelChange.newLevelIcon"
+              ></div>
+              <h2>Niveau supérieur !</h2>
+              <h3 x-text="levelChange.newLevelName"></h3>
+              <p>Bravo, tu progresses ! 🎉</p>
+            </div>
+          </template>
+          <template x-if="levelChange && levelChange.type === 'downgrade'">
+            <div style="text-align: center">
+              <div
+                style="font-size: 100px"
+                x-text="levelChange.newLevelIcon"
+              ></div>
+              <h2>Changement de niveau</h2>
+              <h3 x-text="levelChange.newLevelName"></h3>
+              <p>Continue, tu vas y arriver ! 💪</p>
+            </div>
+          </template>
+          <footer>
+            <button @click="closeLevelChangeScreen">Continuer</button>
+          </footer>
+        </article>
+      </dialog>
+
+      <!-- Modale de félicitations -->
+      <dialog x-ref="congratsModal">
+        <article>
+          <header>
+            <h2>🎉 Félicitations !</h2>
+          </header>
+          <p>⏱️ Temps réalisé : <strong x-text="finalTimeText"></strong></p>
+
+          <footer>
+            <button @click="closeModal">Continuer</button>
+          </footer>
+
+          <div id="scoreboard">
+            <h3>🏆 Top 10 des meilleurs temps</h3>
+            <h4
+              x-text="completedGameLevelStats ? `${completedGameLevelStats.levelIcon} ${completedGameLevelStats.levelName}` : `${difficultyStats.levelIcon} ${difficultyStats.levelName}`"
+            ></h4>
+            <table id="scoreboard-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Temps</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(score, index) in scoreboard" :key="index">
+                  <tr :class="{ 'current-score': score.isCurrent }">
+                    <td x-text="index === 0 ? '👑' : index + 1"></td>
+                    <td>
+                      <strong x-text="formatTime(score.time)"></strong>
+                      <span x-show="score.isCurrent"> 🆕</span>
+                    </td>
+                    <td x-text="formatDate(score.date)"></td>
+                  </tr>
+                </template>
+                <tr x-show="scoreboard.length === 0">
+                  <td colspan="3">Aucun score enregistré</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </dialog>
+    </main>
+
+    <script src="common/difficulty-base.js"></script>
+    <script src="common/game-core.js"></script>
+    <script src="data/word-lists.js"></script>
+    <script src="spelling-difficulty.js"></script>
+    <script src="spelling-script.js"></script>
+  </body>
+</html>

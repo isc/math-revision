@@ -133,10 +133,10 @@ document.addEventListener('alpine:init', () => {
       this.correctAnswers++
 
       // Animation du pouce vers le haut
-      this.showThumbsUp()
+      showThumbsUp()
 
       // Confettis
-      this.showConfetti()
+      showConfetti()
 
       // Vérifier si objectif atteint
       if (this.correctAnswers >= 10) {
@@ -152,8 +152,8 @@ document.addEventListener('alpine:init', () => {
 
     // Gérer une mauvaise réponse
     handleWrongAnswer() {
-      this.showAngryFace()
-      this.showThumbsDownRain()
+      showAngryFace()
+      showThumbsDownRain()
     },
 
     // Afficher la victoire
@@ -175,9 +175,9 @@ document.addEventListener('alpine:init', () => {
       }
 
       // Sauvegarder et afficher le scoreboard
-      this.saveScore(elapsedTime)
-      this.loadScoreboard(elapsedTime)
-      this.showThumbsUpRain()
+      saveScore('math-revision-scoreboard', elapsedTime, this.difficultyManager.currentLevel)
+      this.scoreboard = loadScoreboard('math-revision-scoreboard', this.difficultyManager.currentLevel, elapsedTime)
+      showThumbsUpRain(this.$refs.congratsModal)
 
       // Vérifier s'il y a un changement de niveau en attente
       if (
@@ -252,222 +252,19 @@ document.addEventListener('alpine:init', () => {
       }
     },
 
-    // Gestion du scoreboard
-    saveScore(timeInSeconds) {
-      const scoreboard = this.getScoreboard()
-      const currentLevel = this.difficultyManager.currentLevel
-
-      scoreboard.push({
-        time: timeInSeconds,
-        date: new Date().toISOString(),
-        level: currentLevel
-      })
-
-      // Garder les 10 meilleurs scores PAR NIVEAU
-      const scoresByLevel = {}
-      scoreboard.forEach(score => {
-        // Ignorer les anciens scores sans niveau
-        if (!score.level) return
-
-        const level = score.level
-        if (!scoresByLevel[level]) {
-          scoresByLevel[level] = []
-        }
-        scoresByLevel[level].push(score)
-      })
-
-      // Garder top 10 pour chaque niveau
-      const topScores = []
-      Object.keys(scoresByLevel).forEach(level => {
-        const levelScores = scoresByLevel[level]
-          .sort((a, b) => a.time - b.time)
-          .slice(0, 10)
-        topScores.push(...levelScores)
-      })
-
-      localStorage.setItem(
-        'math-revision-scoreboard',
-        JSON.stringify(topScores)
-      )
-    },
-
-    getScoreboard() {
-      const stored = localStorage.getItem('math-revision-scoreboard')
-      return stored ? JSON.parse(stored) : []
-    },
-
-    loadScoreboard(currentTime) {
-      const allScores = this.getScoreboard()
-      const currentLevel = this.difficultyManager.currentLevel
-
-      // Filtrer les scores pour le niveau actuel uniquement
-      const levelScores = allScores
-        .filter(score => score.level === currentLevel)
-        .sort((a, b) => a.time - b.time)
-
-      this.scoreboard = levelScores.map((score, index) => ({
-        ...score,
-        isCurrent:
-          score.time === currentTime &&
-          index === levelScores.findIndex(s => s.time === currentTime)
-      }))
-    },
-
-    // Utilitaires de formatage
+    // Wrappers pour les fonctions de game-core.js (utilisées dans les templates)
     formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60)
-      const secs = seconds % 60
-      return minutes > 0 ? `${minutes} min ${secs} sec` : `${seconds} sec`
+      return formatTime(seconds)
     },
 
     formatDate(isoString) {
-      const date = new Date(isoString)
-      const now = new Date()
-      const diffTime = Math.abs(now - date)
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-      if (diffDays === 0) return "Aujourd'hui"
-      if (diffDays === 1) return 'Hier'
-      if (diffDays < 7) return `Il y a ${diffDays} jours`
-
-      return date.toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short'
-      })
+      return formatDate(isoString)
     },
 
     randomInteger() {
       return Math.round(Math.random() * 10)
-    },
-
-    // Animations
-    showThumbsUp() {
-      const thumbsUp = document.getElementById('thumbs-up')
-      thumbsUp.style.visibility = 'visible'
-      thumbsUp.style.animation = 'thumbsAnimation 2s ease-out'
-
-      setTimeout(() => {
-        thumbsUp.style.visibility = 'hidden'
-        thumbsUp.style.animation = 'none'
-      }, 2000)
-    },
-
-    showAngryFace() {
-      const angryFace = document.getElementById('angry-face')
-      angryFace.style.visibility = 'visible'
-      angryFace.style.animation = 'angryAnimation 2s ease-out'
-
-      setTimeout(() => {
-        angryFace.style.visibility = 'hidden'
-        angryFace.style.animation = 'none'
-      }, 2000)
-    },
-
-    showConfetti() {
-      // Confettis depuis le coin bas gauche
-      confetti({
-        particleCount: 100,
-        angle: 45,
-        spread: 70,
-        origin: { x: 0, y: 1 },
-        ticks: 300,
-        gravity: 0.5,
-        scalar: 1.2
-      })
-
-      // Confettis depuis le coin bas droit
-      setTimeout(() => {
-        confetti({
-          particleCount: 100,
-          angle: 135,
-          spread: 70,
-          origin: { x: 1, y: 1 },
-          ticks: 300,
-          gravity: 0.5,
-          scalar: 1.2
-        })
-      }, 100)
-
-      // Confettis supplémentaires depuis le coin bas gauche
-      setTimeout(() => {
-        confetti({
-          particleCount: 80,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0, y: 1 },
-          ticks: 300,
-          gravity: 0.5,
-          scalar: 1.2
-        })
-      }, 200)
-
-      // Confettis supplémentaires depuis le coin bas droit
-      setTimeout(() => {
-        confetti({
-          particleCount: 80,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1, y: 1 },
-          ticks: 300,
-          gravity: 0.5,
-          scalar: 1.2
-        })
-      }, 200)
-    },
-
-    showThumbsUpRain() {
-      const duration = 3000
-      const animationEnd = Date.now() + duration
-
-      const thumbsUpRain = setInterval(() => {
-        const timeLeft = animationEnd - Date.now()
-
-        if (timeLeft <= 0) {
-          clearInterval(thumbsUpRain)
-          return
-        }
-
-        const thumb = document.createElement('div')
-        thumb.className = 'thumbs-up-rain'
-        thumb.textContent = '👍'
-        thumb.style.left = Math.random() * 100 + '%'
-        thumb.style.bottom = '0'
-        thumb.style.animationDuration = Math.random() * 1.5 + 1.5 + 's'
-
-        const modal = this.$refs.congratsModal
-        modal.appendChild(thumb)
-
-        setTimeout(() => {
-          thumb.remove()
-        }, 3500)
-      }, 150)
-    },
-
-    showThumbsDownRain() {
-      const duration = 2000
-      const animationEnd = Date.now() + duration
-
-      const thumbsDownRain = setInterval(() => {
-        const timeLeft = animationEnd - Date.now()
-
-        if (timeLeft <= 0) {
-          clearInterval(thumbsDownRain)
-          return
-        }
-
-        const thumb = document.createElement('div')
-        thumb.className = 'thumbs-down-rain'
-        thumb.textContent = '👎'
-        thumb.style.left = Math.random() * 100 + '%'
-        thumb.style.top = '-100px'
-        thumb.style.animationDuration = Math.random() * 1.5 + 1.5 + 's'
-
-        document.body.appendChild(thumb)
-
-        setTimeout(() => {
-          thumb.remove()
-        }, 3500)
-      }, 150)
     }
+
+    // Note: Les autres fonctions (animations, scoreboard) sont maintenant dans game-core.js
   }))
 })

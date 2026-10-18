@@ -1,0 +1,148 @@
+/* Styles spécifiques pour le jeu d'orthographe */
+
+/* Conteneur de l'image du mot */
+.word-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem auto;
+  min-height: 300px;
+  max-height: 400px;
+  padding: 1rem;
+}
+
+/* Image du mot à orthographier */
+.word-image {
+  max-width: 100%;
+  max-height: 400px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.word-image:hover {
+  transform: scale(1.05);
+}
+
+/* Affichage du mot correct */
+.correct-word {
+  font-size: 2.5rem;
+  color: var(--pico-primary);
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: var(--pico-primary-background);
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+}
+
+/* Style de l'input texte */
+input[type="text"] {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* Placeholder avec style */
+input[type="text"]::placeholder {
+  font-size: 1rem;
+  letter-spacing: normal;
+  opacity: 0.6;
+}
+
+/* Focus sur l'input */
+input[type="text"]:focus {
+  border-color: var(--pico-primary);
+  box-shadow: 0 0 0 0.2rem var(--pico-primary-focus);
+}
+
+/* Responsive design pour mobile */
+@media (max-width: 768px) {
+  .word-image-container {
+    min-height: 200px;
+    max-height: 250px;
+    margin: 1rem auto;
+  }
+
+  .word-image {
+    max-height: 250px;
+  }
+
+  .correct-word {
+    font-size: 1.8rem;
+    padding: 0.75rem;
+  }
+
+  input[type="text"] {
+    font-size: 1.25rem;
+  }
+
+  input[type="text"]::placeholder {
+    font-size: 0.9rem;
+  }
+}
+
+/* Très petits écrans */
+@media (max-width: 480px) {
+  .word-image-container {
+    min-height: 150px;
+    max-height: 200px;
+  }
+
+  .word-image {
+    max-height: 200px;
+  }
+
+  .correct-word {
+    font-size: 1.5rem;
+    padding: 0.5rem;
+  }
+
+  input[type="text"] {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animation d'entrée pour l'image */
+@keyframes fadeInImage {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.word-image {
+  animation: fadeInImage 0.5s ease-out;
+}
+
+/* Style pour l'état de chargement de l'image */
+.word-image-container::after {
+  content: '';
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--pico-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  opacity: 0;
+}
+
+.word-image-container.loading::after {
+  opacity: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
